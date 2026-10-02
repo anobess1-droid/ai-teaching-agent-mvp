@@ -6,10 +6,18 @@ export async function generateAnswer(question, context) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    return `I can only answer from the uploaded PDF. Based on the provided material, the topic in question appears to be: ${context.slice(0, 250)}...`;
+    return `I can answer based on the uploaded PDF. Here is the relevant material: ${context.slice(0, 250)}...`;
   }
 
-  const prompt = `You are a helpful teaching assistant. Use only the provided context and answer clearly. If the answer cannot be found, say so.\n\nContext:\n${context}\n\nQuestion:\n${question}\n\nAnswer:`;
+  const prompt = `You are a helpful teaching assistant. Use only the provided context and answer clearly. If the answer is not in the context, say so.
+
+Context:
+${context}
+
+Question:
+${question}
+
+Answer:`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

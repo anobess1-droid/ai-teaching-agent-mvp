@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from pathlib import Path
+
 from pypdf import PdfReader
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -72,7 +73,8 @@ def main():
     backend_root = os.getenv('BACKEND_ROOT', '.')
     target_dir = Path(backend_root) / 'data' / 'chunks'
     target_dir.mkdir(parents=True, exist_ok=True)
-    (target_dir / f'{document_id}.json').write_text(json.dumps(embedded_chunks, indent=2), encoding='utf-8')
+    output_file = target_dir / f'{document_id}.json'
+    output_file.write_text(json.dumps(embedded_chunks, indent=2), encoding='utf-8')
 
     print(json.dumps({
         'status': 'ready',

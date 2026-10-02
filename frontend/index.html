@@ -7,8 +7,8 @@
     <style>
       * { box-sizing: border-box; }
       body {
-        font-family: Arial, sans-serif;
         margin: 0;
+        font-family: Arial, sans-serif;
         background: #f3f6fb;
         color: #1f2937;
       }
@@ -19,22 +19,21 @@
       }
       .grid {
         display: grid;
-        grid-template-columns: 320px 1fr 300px;
+        grid-template-columns: 300px 1fr 260px;
         gap: 20px;
       }
       .panel {
         background: white;
         border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
         padding: 20px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
       }
-      h1, h2, h3 { margin-top: 0; }
-      input, button, textarea {
+      input, textarea, button {
         width: 100%;
         padding: 10px 12px;
-        margin-top: 10px;
-        border-radius: 8px;
         border: 1px solid #d1d5db;
+        border-radius: 8px;
+        margin-top: 10px;
         font-size: 14px;
       }
       button {
@@ -43,33 +42,32 @@
         border: none;
         cursor: pointer;
       }
-      button:hover { opacity: 0.95; }
       .messages {
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-height: 480px;
+        max-height: 450px;
         overflow: auto;
         margin-bottom: 16px;
       }
       .message {
         border-radius: 10px;
         padding: 12px 14px;
+        max-width: 80%;
         line-height: 1.5;
       }
-      .user { background: #dbeafe; align-self: flex-end; }
-      .assistant { background: #f3f4f6; align-self: flex-start; }
-      .source {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 10px;
+      .user {
+        background: #dbeafe;
+        align-self: flex-end;
+      }
+      .assistant {
+        background: #f3f4f6;
+        align-self: flex-start;
       }
       .status {
+        margin-top: 8px;
         color: #4b5563;
         font-size: 13px;
-        margin-top: 8px;
       }
     </style>
   </head>
@@ -161,9 +159,7 @@
       });
 
       document.getElementById('uploadBtn').addEventListener('click', async () => {
-        const fileInput = document.getElementById('pdfInput');
-        const file = fileInput.files[0];
-
+        const file = document.getElementById('pdfInput').files[0];
         if (!file) {
           uploadStatus.textContent = 'Please select a PDF file';
           return;
@@ -213,8 +209,8 @@
           appendMessage('assistant', data.answer || 'No answer available');
           askStatus.textContent = `Sources: ${data.sources?.length || 0}`;
         } else {
-          askStatus.textContent = data.error || 'Question failed';
-          appendMessage('assistant', data.error || 'Question failed');
+          appendMessage('assistant', data.error || 'Request failed');
+          askStatus.textContent = data.error || 'Request failed';
         }
       });
     </script>

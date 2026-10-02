@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const dataDir = path.join(__dirname, '..', 'data');
 const storePath = path.join(dataDir, 'store.json');
 const chunksDir = path.join(dataDir, 'chunks');
@@ -53,7 +54,6 @@ export function findDocument(documentId) {
 export function updateDocument(documentId, updates) {
   const store = readStore();
   const index = store.documents.findIndex((doc) => doc.id === documentId);
-
   if (index === -1) return null;
 
   store.documents[index] = { ...store.documents[index], ...updates };
@@ -69,11 +69,7 @@ export function saveMessage(message) {
 
 export function readDocumentChunks(documentId) {
   const filePath = path.join(chunksDir, `${documentId}.json`);
-
-  if (!fs.existsSync(filePath)) {
-    return [];
-  }
-
+  if (!fs.existsSync(filePath)) return [];
   const raw = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(raw);
 }

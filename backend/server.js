@@ -5,11 +5,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
-import documentsRoutes from './routes/documents.js';
+import uploadRoutes from './routes/upload.js';
 import chatRoutes from './routes/chat.js';
-import { verifyToken } from './middleware/auth.js';
-import { setupPdfWorker } from './workers/pdf-processor.worker.js';
-import { setupEmbeddingWorker } from './workers/embedding.worker.js';
+import { verifyToken } from './utils/jwt.js';
 
 dotenv.config();
 
@@ -22,43 +20,39 @@ const PORT = Number(process.env.PORT || 3000);
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Routes
 app.use('/auth', authRoutes);
 
-// Protected routes
-app.use('/documents', verifyToken, documentsRoutes);
-app.use('/chat', verifyToken, chatRoutes);
+function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ ok: true, message: 'AI Teaching Agent is running' });
-});
+  if (!token) {
+    return res.status(401).json({ error: 'Token is required' });
+  }
 
-// Static frontend
+  try {
+    const decoded = verifyToken(token);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+app.use('/upload', authenticate, uploadRoutes);
+app.use('/chat', authenticate, chatRoutes);
+
 const frontendPath = path.join(__dirname, '../frontend');
 app.use(express.static(frontendPath));
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true, message: 'AI Teaching Agent MVP is running' });
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// Setup workers
-async function startServer() {
-  try {
-    console.log('🚀 Starting AI Teaching Agent...');
-    
-    // Setup background workers
-    await setupPdfWorker();
-    await setupEmbeddingWorker();
-    console.log('✓ Workers initialized');
-    
-    app.listen(PORT, () => {
-      console.log(`✓ Server running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`✓ Server running on http://localhost:${PORT}`);
+});

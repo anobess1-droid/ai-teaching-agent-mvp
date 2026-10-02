@@ -1,28 +1,27 @@
 # AI Teaching Agent MVP
 
-A lightweight MVP for an AI teaching assistant that lets a user upload a PDF, extract its content, and ask questions grounded in the uploaded material.
+A lightweight MVP that lets a user register, upload a PDF, and ask questions grounded in the uploaded document.
 
 ## Features
-- User signup/login
+- User signup and login
 - PDF upload
-- PDF text extraction and chunking
-- Question answering grounded in uploaded PDF text
-- Minimal web UI
-- Docker support for local development
+- Text extraction and chunking
+- Embeddings for each chunk
+- Similarity search over document content
+- Grounded answer generation using the uploaded PDF
+- Simple web UI
 
-## Tech stack
+## Stack
 - Backend: Node.js + Express
-- PDF worker: Python + pypdf
-- Frontend: plain HTML + vanilla JS
-- Storage: local JSON store for MVP
-- AI: OpenAI API for embeddings and chat
+- PDF processor: Python + pypdf
+- AI: OpenAI API for embeddings and Q&A
+- Storage: local JSON files for MVP
 
-## Project structure
+## Structure
 
 ```text
 ai-teaching-agent-mvp/
 ├── backend/
-│   ├── config/
 │   ├── data/
 │   ├── routes/
 │   ├── services/
@@ -30,44 +29,30 @@ ai-teaching-agent-mvp/
 │   ├── utils/
 │   ├── package.json
 │   ├── server.js
-│   └── app.js
+│   └── ...
 ├── processor/
-│   ├── pdf_handler.py
 │   ├── requirements.txt
-│   └── tasks.py
+│   ├── tasks.py
+│   └── ...
 ├── frontend/
-│   ├── index.html
-│   └── app.js
-├── docker-compose.yml
+│   └── index.html
 ├── .env.example
+├── docker-compose.yml
 ├── README.md
-└── .gitignore
+├── .gitignore
+└── .
 ```
 
 ## Setup
 
-1. Copy environment file:
-
-```bash
-cp .env.example .env
-```
-
-2. Fill in API keys:
-
-```dotenv
-OPENAI_API_KEY=your_key_here
-JWT_SECRET=change_me
-PORT=3000
-```
-
-3. Install backend dependencies:
+1. Install backend dependencies:
 
 ```bash
 cd backend
 npm install
 ```
 
-4. Install Python worker dependencies:
+2. Install processor dependencies:
 
 ```bash
 cd processor
@@ -76,50 +61,69 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. Start the app:
+3. Create local env file:
+
+```bash
+cp .env.example .env
+```
+
+4. Run backend:
 
 ```bash
 cd backend
 npm run dev
 ```
 
-The app serves the frontend at http://localhost:3000.
+5. Open the app in the browser:
 
-## API
+```text
+http://localhost:3000
+```
 
-### Register user
+## Example flow
+
+1. Register a user
+2. Log in
+3. Upload a PDF
+4. Copy the returned `document_id`
+5. Ask a question using that document ID
+
+## Sample API
+
+Register:
+
 ```bash
 curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{"email":"user@example.com","password":"secret123"}'
 ```
 
-### Login user
+Login:
+
 ```bash
 curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{"email":"user@example.com","password":"secret123"}'
 ```
 
-### Upload PDF
+Upload PDF:
+
 ```bash
 curl -X POST http://localhost:3000/upload \
-  -H "Authorization: Bearer <token>" \
-  -F "pdf=@/path/to/file.pdf"
+  -H 'Authorization: Bearer <token>' \
+  -F 'pdf=@/path/to/file.pdf'
 ```
 
-### Ask a question
+Ask a question:
+
 ```bash
 curl -X POST http://localhost:3000/chat \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"document_id":"<doc_id>","question":"What is this PDF about?"}'
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"document_id":"<doc_id>","question":"What is the main idea of this document?"}'
 ```
 
-## Notes for MVP
-- This version uses local JSON storage instead of a database for simplicity.
-- For production, replace the JSON store with PostgreSQL or MongoDB.
-- The worker uses OpenAI embeddings if configured; otherwise it still extracts text and saves chunks.
-
-## License
-MIT
+## Notes
+- This is an MVP using local JSON storage for simplicity.
+- For production, replace this with PostgreSQL and a dedicated vector database.
+- If no OpenAI key is set, the app still works in fallback mode with a lightweight mock answer.
