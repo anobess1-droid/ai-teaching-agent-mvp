@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Teaching Agent MVP</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background: #f3f6fb;
+        color: #1f2937;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 320px 1fr 300px;
+        gap: 20px;
+      }
+      .panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        padding: 20px;
+      }
+      h1, h2, h3 { margin-top: 0; }
+      input, button, textarea {
+        width: 100%;
+        padding: 10px 12px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        font-size: 14px;
+      }
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover { opacity: 0.95; }
+      .messages {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 480px;
+        overflow: auto;
+        margin-bottom: 16px;
+      }
+      .message {
+        border-radius: 10px;
+        padding: 12px 14px;
+        line-height: 1.5;
+      }
+      .user { background: #dbeafe; align-self: flex-end; }
+      .assistant { background: #f3f4f6; align-self: flex-start; }
+      .source {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      .status {
+        color: #4b5563;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>AI Teaching Agent MVP</h1>
+
+      <div class="grid">
+        <aside class="panel">
+          <h2>Auth</h2>
+          <input id="email" type="email" placeholder="Email" />
+          <input id="password" type="password" placeholder="Password" />
+          <button id="registerBtn">Register</button>
+          <button id="loginBtn" style="margin-top: 8px; background: #16a34a;">Login</button>
+          <div id="authStatus" class="status"></div>
+        </aside>
+
+        <main class="panel">
+          <h2>Chat</h2>
+          <div id="messages" class="messages"></div>
+          <input id="documentId" type="text" placeholder="Document ID" />
+          <textarea id="question" rows="4" placeholder="Ask a question about the uploaded PDF..."></textarea>
+          <button id="askBtn">Ask Question</button>
+          <div id="askStatus" class="status"></div>
+        </main>
+
+        <aside class="panel">
+          <h2>Upload PDF</h2>
+          <input id="pdfInput" type="file" accept="application/pdf" />
+          <button id="uploadBtn">Upload</button>
+          <div id="uploadStatus" class="status"></div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const authStatus = document.getElementById('authStatus');
+      const uploadStatus = document.getElementById('uploadStatus');
+      const askStatus = document.getElementById('askStatus');
+      const messagesEl = document.getElementById('messages');
+
+      let token = localStorage.getItem('token') || '';
+
+      function appendMessage(role, text) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.innerText = text;
+        messagesEl.appendChild(div);
+      }
+
+      document.getElementById('registerBtn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const res = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('token', token);
+          authStatus.textContent = `Registered as ${data.user.email}`;
+        } else {
+          authStatus.textContent = data.error || 'Registration failed';
+        }
+      });
+
+      document.getElementById('loginBtn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          token = data.token;
+          localStorage.setItem('token', token);
+          authStatus.textContent = `Logged in as ${data.user.email}`;
+        } else {
+          authStatus.textContent = data.error || 'Login failed';
+        }
+      });
+
+      document.getElementById('uploadBtn').addEventListener('click', async () => {
+        const fileInput = document.getElementById('pdfInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+          uploadStatus.textContent = 'Please select a PDF file';
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('pdf', file);
+
+        const res = await fetch('/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('documentId').value = data.document_id;
+          uploadStatus.textContent = `Uploaded. Status: ${data.status}`;
+        } else {
+          uploadStatus.textContent = data.error || 'Upload failed';
+        }
+      });
+
+      document.getElementById('askBtn').addEventListener('click', async () => {
+        const documentId = document.getElementById('documentId').value;
+        const question = document.getElementById('question').value;
+
+        if (!documentId || !question) {
+          askStatus.textContent = 'Please provide document ID and question';
+          return;
+        }
+
+        appendMessage('user', question);
+
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ document_id: documentId, question })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          appendMessage('assistant', data.answer || 'No answer available');
+          askStatus.textContent = `Sources: ${data.sources?.length || 0}`;
+        } else {
+          askStatus.textContent = data.error || 'Question failed';
+          appendMessage('assistant', data.error || 'Question failed');
+        }
+      });
+    </script>
+  </body>
+</html>

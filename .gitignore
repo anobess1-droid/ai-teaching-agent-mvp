@@ -1,0 +1,11 @@
+# .gitignore
+node_modules/
+.env
+backend/uploads/
+backend/data/*.json
+backend/data/chunks/
+.DS_Store
+npm-debug.log*
+venv/
+__pycache__/
+*.pyc
