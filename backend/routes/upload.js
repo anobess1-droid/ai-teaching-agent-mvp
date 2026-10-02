@@ -11,7 +11,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, '../uploads');
 
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const router = express.Router();
 const upload = multer({ dest: uploadsDir });
@@ -30,6 +32,7 @@ router.post('/', upload.single('pdf'), async (req, res) => {
 
   const docId = uuidv4();
   const targetPath = path.join(uploadsDir, `${docId}.pdf`);
+
   fs.renameSync(file.path, targetPath);
 
   const document = {

@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import { findDocument, readDocumentChunks, saveMessage } from '../data/store.js';
 import { embedText } from '../services/vectorStore.js';
 import { generateAnswer } from '../services/llmService.js';
@@ -9,6 +10,7 @@ function cosineSimilarity(a, b) {
   const dot = a.reduce((sum, value, index) => sum + value * b[index], 0);
   const magA = Math.sqrt(a.reduce((sum, value) => sum + value * value, 0));
   const magB = Math.sqrt(b.reduce((sum, value) => sum + value * value, 0));
+
   if (!magA || !magB) return 0;
   return dot / (magA * magB);
 }
@@ -34,13 +36,10 @@ router.post('/', async (req, res) => {
   const queryEmbedding = await embedText(question);
 
   const rankedChunks = chunks
-    .map((chunk) => {
-      const chunkEmbedding = chunk.embedding || Array(1536).fill(0.01);
-      return {
-        ...chunk,
-        score: cosineSimilarity(queryEmbedding, chunkEmbedding)
-      };
-    })
+    .map((chunk) => ({
+      ...chunk,
+      score: cosineSimilarity(queryEmbedding, chunk.embedding || Array(1536).fill(0.01))
+    }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
@@ -51,7 +50,7 @@ router.post('/', async (req, res) => {
   const context = rankedChunks.map((chunk) => `Page ${chunk.page}: ${chunk.text}`).join('\n\n');
   const answer = await generateAnswer(question, context);
 
-  const message = {
+  const userMessage = {
     id: crypto.randomUUID(),
     userId,
     documentId: document_id,
@@ -69,7 +68,7 @@ router.post('/', async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  saveMessage(message);
+  saveMessage(userMessage);
   saveMessage(assistantMessage);
 
   return res.json({

@@ -20,19 +20,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/auth', authRoutes);
-app.use('/upload', uploadRoutes);
-app.use('/chat', chatRoutes);
-
-const frontendPath = path.join(__dirname, '../frontend');
-app.use(express.static(frontendPath));
-
-app.get('/health', (req, res) => {
-  res.json({ ok: true, message: 'AI Teaching Agent MVP is running' });
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -47,14 +34,24 @@ function authenticate(req, res, next) {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 
-// Attach auth middleware to upload/chat routes at a route-level
 app.use('/upload', authenticate, uploadRoutes);
 app.use('/chat', authenticate, chatRoutes);
 
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath));
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true, message: 'AI Teaching Agent MVP is running' });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`✓ Server running on http://localhost:${PORT}`);
 });
